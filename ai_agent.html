@@ -25,6 +25,29 @@
     --tag-purple: #4a1a7a;
   }
 
+  /* ══ PAGE THEMES ══ */
+  body, body * { transition: background-color .3s, border-color .3s, color .3s, box-shadow .3s; }
+  body.theme-chat {
+    --accent: #e94560; --accent2: #0f7de4; --accent3: #00d4aa;
+    --bg-dark: #1a1a2e; --bg-mid: #16213e; --bg-card: #0f3460; --bg-item: #1e2a45; --border: #2a3a5e;
+  }
+  body.theme-learn {
+    --accent: #10b981; --accent2: #34d399; --accent3: #059669;
+    --bg-dark: #0a1f15; --bg-mid: #0e2b1c; --bg-card: #0d3824; --bg-item: #163020; --border: #1c4830;
+  }
+  body.theme-tasks {
+    --accent: #f59e0b; --accent2: #f97316; --accent3: #fbbf24;
+    --bg-dark: #1c1408; --bg-mid: #24190b; --bg-card: #38280a; --bg-item: #2c1e0c; --border: #48320e;
+  }
+  body.theme-stats {
+    --accent: #8b5cf6; --accent2: #a78bfa; --accent3: #c4b5fd;
+    --bg-dark: #12101e; --bg-mid: #18142e; --bg-card: #241a48; --bg-item: #1e1638; --border: #342858;
+  }
+  body.theme-settings {
+    --accent: #0ea5e9; --accent2: #38bdf8; --accent3: #7dd3fc;
+    --bg-dark: #0c1622; --bg-mid: #10202e; --bg-card: #122a3e; --bg-item: #162434; --border: #1e3a52;
+  }
+
   body {
     font-family: "Microsoft YaHei", "微软雅黑", sans-serif;
     background: var(--bg-dark);
@@ -43,6 +66,28 @@
     display: flex;
     flex-direction: column;
     flex-shrink: 0;
+  }
+
+  .sidebar-resize {
+    width: 5px;
+    flex-shrink: 0;
+    cursor: col-resize;
+    background: transparent;
+    position: relative;
+    transition: background 0.15s;
+    z-index: 10;
+  }
+  .sidebar-resize:hover, .sidebar-resize.dragging {
+    background: var(--accent2);
+  }
+  .sidebar-resize::after {
+    content: '';
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 3px; height: 40px;
+    border-radius: 2px;
+    background: var(--border);
   }
 
   .logo {
@@ -261,6 +306,28 @@
     overflow: hidden;
   }
 
+  .content-resize {
+    width: 5px;
+    flex-shrink: 0;
+    cursor: col-resize;
+    background: transparent;
+    position: relative;
+    transition: background 0.15s;
+    z-index: 10;
+  }
+  .content-resize:hover, .content-resize.dragging {
+    background: var(--accent2);
+  }
+  .content-resize::after {
+    content: '';
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 3px; height: 40px;
+    border-radius: 2px;
+    background: var(--border);
+  }
+
   .chat-header {
     padding: 12px 18px;
     border-bottom: 1px solid var(--border);
@@ -408,7 +475,7 @@
   }
 </style>
 </head>
-<body>
+<body class="theme-chat">
 
 <!-- 侧边栏 -->
 <aside class="sidebar">
@@ -421,19 +488,19 @@
   </div>
 
   <nav class="nav">
-    <div class="nav-item active" onclick="setNav(this)">
+    <div class="nav-item active" data-theme="chat" onclick="setNav(this)">
       <span class="nav-icon">🤖</span> 智能对话
     </div>
-    <div class="nav-item" onclick="setNav(this)">
+    <div class="nav-item" data-theme="learn" onclick="setNav(this)">
       <span class="nav-icon">📚</span> 学习模块
     </div>
-    <div class="nav-item" onclick="setNav(this)">
+    <div class="nav-item" data-theme="tasks" onclick="setNav(this)">
       <span class="nav-icon">📋</span> 任务记录
     </div>
-    <div class="nav-item" onclick="setNav(this)">
+    <div class="nav-item" data-theme="stats" onclick="setNav(this)">
       <span class="nav-icon">📊</span> 使用统计
     </div>
-    <div class="nav-item" onclick="setNav(this)">
+    <div class="nav-item" data-theme="settings" onclick="setNav(this)">
       <span class="nav-icon">⚙️</span> 设置
     </div>
   </nav>
@@ -443,6 +510,9 @@
     <div style="margin-top:4px">模型: claude-sonnet-4-6</div>
   </div>
 </aside>
+
+<!-- 侧边栏拖拽手柄 -->
+<div class="sidebar-resize" id="sidebar-resize"></div>
 
 <!-- 主区域 -->
 <div class="main">
@@ -701,6 +771,9 @@
 
     </div><!-- /modules-panel -->
 
+    <!-- 内容区拖拽手柄 -->
+    <div class="content-resize" id="content-resize"></div>
+
     <!-- 对话面板 -->
     <div class="chat-panel">
       <div class="chat-header">
@@ -832,6 +905,9 @@
   function setNav(el) {
     document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
     el.classList.add('active');
+    // 切换页面主题
+    document.body.classList.remove('theme-chat','theme-learn','theme-tasks','theme-stats','theme-settings');
+    document.body.classList.add('theme-' + el.dataset.theme);
   }
 
   function setTab(el) {
@@ -1129,6 +1205,70 @@
     el.style.height = '22px';
     el.style.height = Math.min(el.scrollHeight, 100) + 'px';
   }
+  // ── 侧边栏拖拽调整宽度 ──
+  (function () {
+    const handle = document.getElementById('sidebar-resize');
+    const sidebar = document.querySelector('.sidebar');
+    const MIN_W = 120, MAX_W = 360;
+    let dragging = false, startX = 0, startW = 0;
+
+    handle.addEventListener('mousedown', (e) => {
+      dragging = true;
+      startX = e.clientX;
+      startW = sidebar.offsetWidth;
+      handle.classList.add('dragging');
+      document.body.style.cursor = 'col-resize';
+      document.body.style.userSelect = 'none';
+      e.preventDefault();
+    });
+
+    document.addEventListener('mousemove', (e) => {
+      if (!dragging) return;
+      const newW = Math.min(MAX_W, Math.max(MIN_W, startW + e.clientX - startX));
+      sidebar.style.width = newW + 'px';
+    });
+
+    document.addEventListener('mouseup', () => {
+      if (!dragging) return;
+      dragging = false;
+      handle.classList.remove('dragging');
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    });
+  })();
+
+  // ── 模块面板与对话面板之间拖拽调整宽度 ──
+  (function () {
+    const handle = document.getElementById('content-resize');
+    const panel  = document.querySelector('.modules-panel');
+    const MIN_W  = 200, MAX_W = 640;
+    let dragging = false, startX = 0, startW = 0;
+
+    handle.addEventListener('mousedown', (e) => {
+      dragging = true;
+      startX = e.clientX;
+      startW = panel.offsetWidth;
+      handle.classList.add('dragging');
+      document.body.style.cursor = 'col-resize';
+      document.body.style.userSelect = 'none';
+      e.preventDefault();
+    });
+
+    document.addEventListener('mousemove', (e) => {
+      if (!dragging) return;
+      const newW = Math.min(MAX_W, Math.max(MIN_W, startW + e.clientX - startX));
+      panel.style.width = newW + 'px';
+    });
+
+    document.addEventListener('mouseup', () => {
+      if (!dragging) return;
+      dragging = false;
+      handle.classList.remove('dragging');
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    });
+  })();
+
 </script>
 </body>
 </html>

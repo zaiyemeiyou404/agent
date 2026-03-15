@@ -25,29 +25,6 @@
     --tag-purple: #4a1a7a;
   }
 
-  /* ══ PAGE THEMES ══ */
-  body, body * { transition: background-color .3s, border-color .3s, color .3s, box-shadow .3s; }
-  body.theme-chat {
-    --accent: #e94560; --accent2: #0f7de4; --accent3: #00d4aa;
-    --bg-dark: #1a1a2e; --bg-mid: #16213e; --bg-card: #0f3460; --bg-item: #1e2a45; --border: #2a3a5e;
-  }
-  body.theme-learn {
-    --accent: #10b981; --accent2: #34d399; --accent3: #059669;
-    --bg-dark: #0a1f15; --bg-mid: #0e2b1c; --bg-card: #0d3824; --bg-item: #163020; --border: #1c4830;
-  }
-  body.theme-tasks {
-    --accent: #f59e0b; --accent2: #f97316; --accent3: #fbbf24;
-    --bg-dark: #1c1408; --bg-mid: #24190b; --bg-card: #38280a; --bg-item: #2c1e0c; --border: #48320e;
-  }
-  body.theme-stats {
-    --accent: #8b5cf6; --accent2: #a78bfa; --accent3: #c4b5fd;
-    --bg-dark: #12101e; --bg-mid: #18142e; --bg-card: #241a48; --bg-item: #1e1638; --border: #342858;
-  }
-  body.theme-settings {
-    --accent: #0ea5e9; --accent2: #38bdf8; --accent3: #7dd3fc;
-    --bg-dark: #0c1622; --bg-mid: #10202e; --bg-card: #122a3e; --bg-item: #162434; --border: #1e3a52;
-  }
-
   body {
     font-family: "Microsoft YaHei", "微软雅黑", sans-serif;
     background: var(--bg-dark);
@@ -66,28 +43,6 @@
     display: flex;
     flex-direction: column;
     flex-shrink: 0;
-  }
-
-  .sidebar-resize {
-    width: 5px;
-    flex-shrink: 0;
-    cursor: col-resize;
-    background: transparent;
-    position: relative;
-    transition: background 0.15s;
-    z-index: 10;
-  }
-  .sidebar-resize:hover, .sidebar-resize.dragging {
-    background: var(--accent2);
-  }
-  .sidebar-resize::after {
-    content: '';
-    position: absolute;
-    top: 50%; left: 50%;
-    transform: translate(-50%, -50%);
-    width: 3px; height: 40px;
-    border-radius: 2px;
-    background: var(--border);
   }
 
   .logo {
@@ -306,28 +261,6 @@
     overflow: hidden;
   }
 
-  .content-resize {
-    width: 5px;
-    flex-shrink: 0;
-    cursor: col-resize;
-    background: transparent;
-    position: relative;
-    transition: background 0.15s;
-    z-index: 10;
-  }
-  .content-resize:hover, .content-resize.dragging {
-    background: var(--accent2);
-  }
-  .content-resize::after {
-    content: '';
-    position: absolute;
-    top: 50%; left: 50%;
-    transform: translate(-50%, -50%);
-    width: 3px; height: 40px;
-    border-radius: 2px;
-    background: var(--border);
-  }
-
   .chat-header {
     padding: 12px 18px;
     border-bottom: 1px solid var(--border);
@@ -475,7 +408,7 @@
   }
 </style>
 </head>
-<body class="theme-chat">
+<body>
 
 <!-- 侧边栏 -->
 <aside class="sidebar">
@@ -488,19 +421,19 @@
   </div>
 
   <nav class="nav">
-    <div class="nav-item active" data-theme="chat" onclick="setNav(this)">
+    <div class="nav-item active" onclick="setNav(this)">
       <span class="nav-icon">🤖</span> 智能对话
     </div>
-    <div class="nav-item" data-theme="learn" onclick="setNav(this)">
+    <div class="nav-item" onclick="setNav(this)">
       <span class="nav-icon">📚</span> 学习模块
     </div>
-    <div class="nav-item" data-theme="tasks" onclick="setNav(this)">
+    <div class="nav-item" onclick="setNav(this)">
       <span class="nav-icon">📋</span> 任务记录
     </div>
-    <div class="nav-item" data-theme="stats" onclick="setNav(this)">
+    <div class="nav-item" onclick="setNav(this)">
       <span class="nav-icon">📊</span> 使用统计
     </div>
-    <div class="nav-item" data-theme="settings" onclick="setNav(this)">
+    <div class="nav-item" onclick="setNav(this)">
       <span class="nav-icon">⚙️</span> 设置
     </div>
   </nav>
@@ -510,9 +443,6 @@
     <div style="margin-top:4px">模型: claude-sonnet-4-6</div>
   </div>
 </aside>
-
-<!-- 侧边栏拖拽手柄 -->
-<div class="sidebar-resize" id="sidebar-resize"></div>
 
 <!-- 主区域 -->
 <div class="main">
@@ -535,7 +465,7 @@
   <div class="content">
 
     <!-- 模块列表 -->
-    <div class="modules-panel">
+    <div class="modules-panel" id="modules-panel">
 
       <!-- 模块 1：学习效率提升 -->
       <div class="module-card expanded" id="mod1">
@@ -771,8 +701,37 @@
 
     </div><!-- /modules-panel -->
 
-    <!-- 内容区拖拽手柄 -->
-    <div class="content-resize" id="content-resize"></div>
+    <!-- 任务记录 面板（隐藏） -->
+    <div class="modules-panel" id="records-panel" style="display:none">
+      <div style="padding:16px;color:var(--text-muted)">
+        <div style="font-weight:700;color:var(--text);margin-bottom:8px">任务记录</div>
+        <div>暂无历史记录。完成的任务会在此处显示。</div>
+        <div style="margin-top:12px;font-size:12px">提示：在对话中使用“记录任务”可以将任务保存到历史。</div>
+      </div>
+    </div>
+
+    <!-- 使用统计 面板（隐藏） -->
+    <div class="modules-panel" id="stats-panel" style="display:none">
+      <div style="padding:16px;color:var(--text-muted)">
+        <div style="font-weight:700;color:var(--text);margin-bottom:8px">使用统计</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div>会话次数：<strong id="stat-sessions">0</strong></div>
+          <div>总消息数：<strong id="stat-total-msg">0</strong></div>
+          <div>Tokens 总计：<strong id="stat-total-tokens">0</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 设置 面板（隐藏） -->
+    <div class="modules-panel" id="settings-panel" style="display:none">
+      <div style="padding:16px;color:var(--text-muted)">
+        <div style="font-weight:700;color:var(--text);margin-bottom:8px">设置</div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <label><input type="checkbox" id="opt-auto-scroll" checked> 自动滚动到最新消息</label>
+          <label><input type="checkbox" id="opt-compact-mode"> 紧凑模式（减少间距）</label>
+        </div>
+      </div>
+    </div>
 
     <!-- 对话面板 -->
     <div class="chat-panel">
@@ -905,9 +864,49 @@
   function setNav(el) {
     document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
     el.classList.add('active');
-    // 切换页面主题
-    document.body.classList.remove('theme-chat','theme-learn','theme-tasks','theme-stats','theme-settings');
-    document.body.classList.add('theme-' + el.dataset.theme);
+
+    // 显示/隐藏不同主视图面板
+    const modules = document.getElementById('modules-panel');
+    const chat = document.querySelector('.chat-panel');
+    const records = document.getElementById('records-panel');
+    const stats = document.getElementById('stats-panel');
+    const settings = document.getElementById('settings-panel');
+
+    // 隐藏所有侧边面板（默认）
+    [modules, records, stats, settings].forEach(x => { if (x) x.style.display = 'none'; });
+    // 默认显示 chat 面板状态（有些视图会隐藏 chat）
+    if (chat) chat.style.display = 'flex';
+
+    const name = el.textContent.trim();
+    const topTitle = document.querySelector('.topbar-title');
+    const topSub = document.querySelector('.topbar-sub');
+
+    if (name.includes('智能对话')) {
+      if (modules) modules.style.display = 'flex';
+      if (chat) chat.style.display = 'flex';
+      topTitle.textContent = '功能模块';
+      topSub.textContent = '选择模块后在右侧发起对话';
+    } else if (name.includes('学习模块')) {
+      if (modules) modules.style.display = 'flex';
+      if (chat) chat.style.display = 'none';
+      topTitle.textContent = '学习模块';
+      topSub.textContent = '浏览并选择学习功能';
+    } else if (name.includes('任务记录')) {
+      if (records) records.style.display = 'flex';
+      if (chat) chat.style.display = 'none';
+      topTitle.textContent = '任务记录';
+      topSub.textContent = '查看历史任务与记录';
+    } else if (name.includes('使用统计')) {
+      if (stats) stats.style.display = 'flex';
+      if (chat) chat.style.display = 'none';
+      topTitle.textContent = '使用统计';
+      topSub.textContent = '查看使用情况与指标';
+    } else if (name.includes('设置')) {
+      if (settings) settings.style.display = 'flex';
+      if (chat) chat.style.display = 'none';
+      topTitle.textContent = '设置';
+      topSub.textContent = '应用偏好与账号设置';
+    }
   }
 
   function setTab(el) {
@@ -1205,70 +1204,6 @@
     el.style.height = '22px';
     el.style.height = Math.min(el.scrollHeight, 100) + 'px';
   }
-  // ── 侧边栏拖拽调整宽度 ──
-  (function () {
-    const handle = document.getElementById('sidebar-resize');
-    const sidebar = document.querySelector('.sidebar');
-    const MIN_W = 120, MAX_W = 360;
-    let dragging = false, startX = 0, startW = 0;
-
-    handle.addEventListener('mousedown', (e) => {
-      dragging = true;
-      startX = e.clientX;
-      startW = sidebar.offsetWidth;
-      handle.classList.add('dragging');
-      document.body.style.cursor = 'col-resize';
-      document.body.style.userSelect = 'none';
-      e.preventDefault();
-    });
-
-    document.addEventListener('mousemove', (e) => {
-      if (!dragging) return;
-      const newW = Math.min(MAX_W, Math.max(MIN_W, startW + e.clientX - startX));
-      sidebar.style.width = newW + 'px';
-    });
-
-    document.addEventListener('mouseup', () => {
-      if (!dragging) return;
-      dragging = false;
-      handle.classList.remove('dragging');
-      document.body.style.cursor = '';
-      document.body.style.userSelect = '';
-    });
-  })();
-
-  // ── 模块面板与对话面板之间拖拽调整宽度 ──
-  (function () {
-    const handle = document.getElementById('content-resize');
-    const panel  = document.querySelector('.modules-panel');
-    const MIN_W  = 200, MAX_W = 640;
-    let dragging = false, startX = 0, startW = 0;
-
-    handle.addEventListener('mousedown', (e) => {
-      dragging = true;
-      startX = e.clientX;
-      startW = panel.offsetWidth;
-      handle.classList.add('dragging');
-      document.body.style.cursor = 'col-resize';
-      document.body.style.userSelect = 'none';
-      e.preventDefault();
-    });
-
-    document.addEventListener('mousemove', (e) => {
-      if (!dragging) return;
-      const newW = Math.min(MAX_W, Math.max(MIN_W, startW + e.clientX - startX));
-      panel.style.width = newW + 'px';
-    });
-
-    document.addEventListener('mouseup', () => {
-      if (!dragging) return;
-      dragging = false;
-      handle.classList.remove('dragging');
-      document.body.style.cursor = '';
-      document.body.style.userSelect = '';
-    });
-  })();
-
 </script>
 </body>
 </html>

@@ -409,6 +409,58 @@
     background: var(--bg-mid);
   }
 
+  /* 附件预览条 */
+  .attach-preview {
+    display: flex; flex-wrap: wrap; gap: 6px;
+    padding: 0 0 8px;
+  }
+  .attach-preview:empty { display: none; }
+
+  .attach-chip {
+    display: flex; align-items: center; gap: 5px;
+    padding: 4px 8px 4px 6px;
+    background: var(--bg-card);
+    border: 1px solid var(--accent2);
+    border-radius: 6px;
+    font-size: 11px; color: var(--text);
+    max-width: 180px;
+  }
+  .attach-chip img {
+    width: 28px; height: 28px;
+    object-fit: cover; border-radius: 4px; flex-shrink: 0;
+  }
+  .attach-chip .chip-name {
+    flex: 1; overflow: hidden;
+    text-overflow: ellipsis; white-space: nowrap;
+  }
+  .attach-chip .chip-del {
+    cursor: pointer; color: var(--text-muted);
+    font-size: 13px; line-height: 1; flex-shrink: 0;
+    transition: color 0.15s;
+  }
+  .attach-chip .chip-del:hover { color: var(--accent); }
+
+  /* 上传按钮 */
+  .upload-btn {
+    width: 28px; height: 28px; border-radius: 7px;
+    background: none; border: 1px solid var(--border);
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    color: var(--text-muted); font-size: 15px; flex-shrink: 0;
+    transition: all 0.15s;
+  }
+  .upload-btn:hover { border-color: var(--accent2); color: var(--accent2); }
+
+  /* 聊天气泡内的图片/文件附件 */
+  .msg-attachments { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
+  .msg-img { max-width: 200px; max-height: 160px; border-radius: 8px;
+    object-fit: cover; border: 1px solid var(--border); cursor: pointer; }
+  .msg-file {
+    display: flex; align-items: center; gap: 6px;
+    padding: 5px 10px; background: var(--bg-item);
+    border: 1px solid var(--border); border-radius: 7px;
+    font-size: 11px; color: var(--text);
+  }
+
   .input-wrap {
     display: flex; align-items: center; gap: 8px;
     background: var(--bg-item);
@@ -813,7 +865,14 @@
 
       <!-- 输入框 -->
       <div class="chat-input-bar">
+        <!-- 附件预览 -->
+        <div class="attach-preview" id="attach-preview"></div>
+        <!-- 隐藏的文件选择器 -->
+        <input type="file" id="file-upload" multiple
+          accept="image/*,.pdf,.txt,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.md,.csv,.zip"
+          style="display:none" onchange="handleFiles(this.files)">
         <div class="input-wrap">
+          <button class="upload-btn" title="上传文件/图片" onclick="document.getElementById('file-upload').click()">📎</button>
           <textarea id="chat-input" placeholder="输入消息，或粘贴内容让 AI 帮你处理…" rows="1"
             onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
           <button class="send-btn" onclick="sendMessage()">➤</button>
@@ -1001,25 +1060,81 @@
     return DIFY_CONFIG.apiKeys[subName] || DIFY_CONFIG.apiKeys.default;
   }
 
+  // ── 附件管理 ──
+  let pendingFiles = [];   // { file, url, type:'image'|'file' }
+
+  function handleFiles(fileList) {
+    Array.from(fileList).forEach(file => {
+      const isImage = file.type.startsWith('image/');
+      const url = isImage ? URL.createObjectURL(file) : null;
+      pendingFiles.push({ file, url, type: isImage ? 'image' : 'file' });
+    });
+    // reset input so same file can be re-selected
+    document.getElementById('file-upload').value = '';
+    renderAttachPreview();
+  }
+
+  function renderAttachPreview() {
+    const bar = document.getElementById('attach-preview');
+    bar.innerHTML = '';
+    pendingFiles.forEach((item, idx) => {
+      const chip = document.createElement('div');
+      chip.className = 'attach-chip';
+      if (item.type === 'image') {
+        chip.innerHTML = `<img src="${item.url}"><span class="chip-name" title="${item.file.name}">${item.file.name}</span><span class="chip-del" onclick="removeAttach(${idx})">✕</span>`;
+      } else {
+        const ext = item.file.name.split('.').pop().toUpperCase();
+        chip.innerHTML = `<span style="font-size:15px">📄</span><span class="chip-name" title="${item.file.name}">${item.file.name}</span><span style="color:var(--text-muted);font-size:10px;flex-shrink:0">${ext}</span><span class="chip-del" onclick="removeAttach(${idx})">✕</span>`;
+      }
+      bar.appendChild(chip);
+    });
+  }
+
+  function removeAttach(idx) {
+    if (pendingFiles[idx].url) URL.revokeObjectURL(pendingFiles[idx].url);
+    pendingFiles.splice(idx, 1);
+    renderAttachPreview();
+  }
+
   // ── 核心发送函数（SSE 流式输出）──
   async function sendMessage() {
     const input = document.getElementById('chat-input');
     const text = input.value.trim();
-    if (!text) return;
+    if (!text && pendingFiles.length === 0) return;
 
     // 渲染用户消息
     const container = document.getElementById('chat-messages');
     const now = () => new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
     const userDiv = document.createElement('div');
     userDiv.className = 'msg user';
+
+    // 构建附件 HTML
+    let attachHtml = '';
+    if (pendingFiles.length > 0) {
+      const parts = pendingFiles.map(item => {
+        if (item.type === 'image') {
+          return `<img class="msg-img" src="${item.url}" title="${item.file.name}">`;
+        } else {
+          const ext = item.file.name.split('.').pop().toUpperCase();
+          return `<div class="msg-file"><span>📄</span><span>${item.file.name}</span><span style="color:var(--text-muted);font-size:10px">${ext}</span></div>`;
+        }
+      }).join('');
+      attachHtml = `<div class="msg-attachments">${parts}</div>`;
+    }
+
     userDiv.innerHTML = `
       <div class="msg-avatar">👤</div>
       <div>
-        <div class="msg-bubble">${text.replace(/</g,'&lt;')}</div>
+        ${attachHtml}
+        ${text ? `<div class="msg-bubble">${text.replace(/</g,'&lt;')}</div>` : ''}
         <div class="msg-time">${now()}</div>
       </div>`;
     container.appendChild(userDiv);
     container.scrollTop = container.scrollHeight;
+
+    // 清空附件
+    pendingFiles = [];
+    renderAttachPreview();
 
     input.value = '';
     input.style.height = '22px';

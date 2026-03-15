@@ -25,6 +25,29 @@
     --tag-purple: #4a1a7a;
   }
 
+  /* ══ PAGE THEMES ══ */
+  body, body * { transition: background-color .3s, border-color .3s, color .3s, box-shadow .3s; }
+  body.theme-chat {
+    --accent: #e94560; --accent2: #0f7de4; --accent3: #00d4aa;
+    --bg-dark: #1a1a2e; --bg-mid: #16213e; --bg-card: #0f3460; --bg-item: #1e2a45; --border: #2a3a5e;
+  }
+  body.theme-learn {
+    --accent: #10b981; --accent2: #34d399; --accent3: #059669;
+    --bg-dark: #0a1f15; --bg-mid: #0e2b1c; --bg-card: #0d3824; --bg-item: #163020; --border: #1c4830;
+  }
+  body.theme-tasks {
+    --accent: #f59e0b; --accent2: #f97316; --accent3: #fbbf24;
+    --bg-dark: #1c1408; --bg-mid: #24190b; --bg-card: #38280a; --bg-item: #2c1e0c; --border: #48320e;
+  }
+  body.theme-stats {
+    --accent: #8b5cf6; --accent2: #a78bfa; --accent3: #c4b5fd;
+    --bg-dark: #12101e; --bg-mid: #18142e; --bg-card: #241a48; --bg-item: #1e1638; --border: #342858;
+  }
+  body.theme-settings {
+    --accent: #0ea5e9; --accent2: #38bdf8; --accent3: #7dd3fc;
+    --bg-dark: #0c1622; --bg-mid: #10202e; --bg-card: #122a3e; --bg-item: #162434; --border: #1e3a52;
+  }
+
   body {
     font-family: "Microsoft YaHei", "微软雅黑", sans-serif;
     background: var(--bg-dark);
@@ -43,6 +66,28 @@
     display: flex;
     flex-direction: column;
     flex-shrink: 0;
+  }
+
+  .sidebar-resize {
+    width: 5px;
+    flex-shrink: 0;
+    cursor: col-resize;
+    background: transparent;
+    position: relative;
+    transition: background 0.15s;
+    z-index: 10;
+  }
+  .sidebar-resize:hover, .sidebar-resize.dragging {
+    background: var(--accent2);
+  }
+  .sidebar-resize::after {
+    content: '';
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 3px; height: 40px;
+    border-radius: 2px;
+    background: var(--border);
   }
 
   .logo {
@@ -137,6 +182,28 @@
     flex: 1;
     display: flex;
     overflow: hidden;
+  }
+
+  .content-resize {
+    width: 5px;
+    flex-shrink: 0;
+    cursor: col-resize;
+    background: transparent;
+    position: relative;
+    transition: background 0.15s;
+    z-index: 10;
+  }
+  .content-resize:hover, .content-resize.dragging {
+    background: var(--accent2);
+  }
+  .content-resize::after {
+    content: '';
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 3px; height: 40px;
+    border-radius: 2px;
+    background: var(--border);
   }
 
   /* ── 模块面板 ── */
@@ -336,6 +403,12 @@
 
   .chip:hover { border-color: var(--accent2); color: var(--text); }
 
+  /* 上传预览 */
+  .file-preview { display:flex; gap:8px; align-items:center; }
+  .file-thumb { width:80px; height:56px; object-fit:cover; border-radius:6px; border:1px solid var(--border); }
+  .file-meta { font-size:12px; color:var(--text-muted); }
+  .file-btn input { cursor: pointer; }
+
   .chat-input-bar {
     padding: 12px 18px;
     border-top: 1px solid var(--border);
@@ -408,7 +481,7 @@
   }
 </style>
 </head>
-<body>
+<body class="theme-chat">
 
 <!-- 侧边栏 -->
 <aside class="sidebar">
@@ -421,19 +494,19 @@
   </div>
 
   <nav class="nav">
-    <div class="nav-item active" onclick="setNav(this)">
+    <div class="nav-item active" data-theme="chat" onclick="setNav(this)">
       <span class="nav-icon">🤖</span> 智能对话
     </div>
-    <div class="nav-item" onclick="setNav(this)">
+    <div class="nav-item" data-theme="learn" onclick="setNav(this)">
       <span class="nav-icon">📚</span> 学习模块
     </div>
-    <div class="nav-item" onclick="setNav(this)">
+    <div class="nav-item" data-theme="tasks" onclick="setNav(this)">
       <span class="nav-icon">📋</span> 任务记录
     </div>
-    <div class="nav-item" onclick="setNav(this)">
+    <div class="nav-item" data-theme="stats" onclick="setNav(this)">
       <span class="nav-icon">📊</span> 使用统计
     </div>
-    <div class="nav-item" onclick="setNav(this)">
+    <div class="nav-item" data-theme="settings" onclick="setNav(this)">
       <span class="nav-icon">⚙️</span> 设置
     </div>
   </nav>
@@ -443,6 +516,9 @@
     <div style="margin-top:4px">模型: claude-sonnet-4-6</div>
   </div>
 </aside>
+
+<!-- 侧边栏拖拽手柄 -->
+<div class="sidebar-resize" id="sidebar-resize"></div>
 
 <!-- 主区域 -->
 <div class="main">
@@ -701,6 +777,9 @@
 
     </div><!-- /modules-panel -->
 
+    <!-- 内容区拖拽手柄 -->
+    <div class="content-resize" id="content-resize"></div>
+
     <!-- 任务记录 面板（隐藏） -->
     <div class="modules-panel" id="records-panel" style="display:none">
       <div style="padding:16px;color:var(--text-muted)">
@@ -743,6 +822,10 @@
         <div class="chat-actions">
           <button class="chat-btn" onclick="clearChat()">清空</button>
           <button class="chat-btn">导出</button>
+          <label class="chat-btn file-btn" title="上传文件">
+            📎
+            <input id="file-input" type="file" style="display:none" multiple onchange="handleFileSelect(event)">
+          </label>
         </div>
       </div>
 
@@ -864,6 +947,12 @@
   function setNav(el) {
     document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
     el.classList.add('active');
+
+    // 切换页面主题（如果 data-theme 提供）
+    document.body.classList.remove('theme-chat','theme-learn','theme-tasks','theme-stats','theme-settings');
+    if (el.dataset && el.dataset.theme) {
+      document.body.classList.add('theme-' + el.dataset.theme);
+    }
 
     // 显示/隐藏不同主视图面板
     const modules = document.getElementById('modules-panel');
@@ -1204,6 +1293,174 @@
     el.style.height = '22px';
     el.style.height = Math.min(el.scrollHeight, 100) + 'px';
   }
+
+  // ── 文件/图片上传 支持 ──
+  // 配置：设置 DIFY_CONFIG.uploadURL 为你的文件接收接口
+  async function handleFileSelect(evt) {
+    const files = evt.target.files || evt.dataTransfer.files;
+    if (!files || files.length === 0) return;
+    for (const f of files) {
+      await processAndUploadFile(f);
+    }
+    // 清空选择以便可以重复选择同一文件
+    const fi = document.getElementById('file-input'); if (fi) fi.value = '';
+  }
+
+  async function processAndUploadFile(file) {
+    // 先在聊天中显示用户已发送文件的占位/预览
+    const container = document.getElementById('chat-messages');
+    const now = new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+
+    const userDiv = document.createElement('div');
+    userDiv.className = 'msg user';
+    const isImage = file.type && file.type.startsWith('image/');
+    if (isImage) {
+      const url = URL.createObjectURL(file);
+      userDiv.innerHTML = `
+        <div class="msg-avatar">👤</div>
+        <div>
+          <div class="msg-bubble file-preview"><img class="file-thumb" src="${url}" alt="${file.name}"><div class="file-meta">${file.name}<br>${Math.round(file.size/1024)} KB</div></div>
+          <div class="msg-time">${now}</div>
+        </div>`;
+    } else {
+      userDiv.innerHTML = `
+        <div class="msg-avatar">👤</div>
+        <div>
+          <div class="msg-bubble file-preview"><div class="file-meta">📄 ${file.name}<br>${Math.round(file.size/1024)} KB</div></div>
+          <div class="msg-time">${now}</div>
+        </div>`;
+    }
+    container.appendChild(userDiv);
+    container.scrollTop = container.scrollHeight;
+
+    // 上传到后端
+    try {
+      await uploadFile(file);
+      addAgentMsg(`文件 <strong>${file.name}</strong> 已上传并发送到后端处理`);
+    } catch (err) {
+      addAgentMsg(`⚠️ 上传失败：${err.message}`);
+      console.error('Upload error', err);
+    }
+  }
+
+  async function uploadFile(file) {
+    const subName = currentSub.name;
+    const apiKey = getDifyKey(subName);
+
+    // 使用可配置的上传 URL（由用户/后端提供），若未配置则抛错
+    const uploadURL = DIFY_CONFIG.uploadURL || DIFY_CONFIG.baseURL + '/files';
+    if (!uploadURL) throw new Error('未配置上传接口，请设置 DIFY_CONFIG.uploadURL');
+
+    const form = new FormData();
+    form.append('file', file, file.name);
+    form.append('user', DIFY_CONFIG.userId || '');
+    form.append('sub', subName || '');
+    if (conversationIds[subName]) form.append('conversation_id', conversationIds[subName]);
+
+    const res = await fetch(uploadURL, {
+      method: 'POST',
+      headers: uploadURL.startsWith(DIFY_CONFIG.baseURL) ? { 'Authorization': `Bearer ${apiKey}` } : {},
+      body: form,
+    });
+
+    if (!res.ok) {
+      let errText = await res.text().catch(() => '');
+      try { const j = JSON.parse(errText); errText = j.message || JSON.stringify(j); } catch(_){}
+      throw new Error(errText || `HTTP ${res.status}`);
+    }
+
+    // 如果后端返回 JSON，可将返回结果追加为 Agent 消息
+    const contentType = res.headers.get('content-type') || '';
+    if (contentType.includes('application/json')) {
+      const data = await res.json();
+      if (data && (data.message || data.text)) addAgentMsg(data.message || data.text);
+    } else {
+      const txt = await res.text().catch(()=>null);
+      if (txt) addAgentMsg(txt);
+    }
+  }
+
+  // 拖放支持到聊天区域
+  (function () {
+    const area = document.getElementById('chat-messages');
+    if (!area) return;
+    area.addEventListener('dragover', (e) => { e.preventDefault(); area.style.opacity = 0.9; });
+    area.addEventListener('dragleave', (e) => { e.preventDefault(); area.style.opacity = 1; });
+    area.addEventListener('drop', async (e) => {
+      e.preventDefault(); area.style.opacity = 1;
+      const files = e.dataTransfer.files;
+      if (files && files.length) {
+        for (const f of files) await processAndUploadFile(f);
+      }
+    });
+  })();
+  // ── 侧边栏拖拽调整宽度 ──
+  (function () {
+    const handle = document.getElementById('sidebar-resize');
+    const sidebar = document.querySelector('.sidebar');
+    const MIN_W = 120, MAX_W = 360;
+    let dragging = false, startX = 0, startW = 0;
+
+    if (handle && sidebar) {
+      handle.addEventListener('mousedown', (e) => {
+        dragging = true;
+        startX = e.clientX;
+        startW = sidebar.offsetWidth;
+        handle.classList.add('dragging');
+        document.body.style.cursor = 'col-resize';
+        document.body.style.userSelect = 'none';
+        e.preventDefault();
+      });
+
+      document.addEventListener('mousemove', (e) => {
+        if (!dragging) return;
+        const newW = Math.min(MAX_W, Math.max(MIN_W, startW + e.clientX - startX));
+        sidebar.style.width = newW + 'px';
+      });
+
+      document.addEventListener('mouseup', () => {
+        if (!dragging) return;
+        dragging = false;
+        handle.classList.remove('dragging');
+        document.body.style.cursor = '';
+        document.body.style.userSelect = '';
+      });
+    }
+  })();
+
+  // ── 模块面板与对话面板之间拖拽调整宽度 ──
+  (function () {
+    const handle = document.getElementById('content-resize');
+    const panel  = document.querySelector('.modules-panel');
+    const MIN_W  = 200, MAX_W = 640;
+    let dragging = false, startX = 0, startW = 0;
+
+    if (handle && panel) {
+      handle.addEventListener('mousedown', (e) => {
+        dragging = true;
+        startX = e.clientX;
+        startW = panel.offsetWidth;
+        handle.classList.add('dragging');
+        document.body.style.cursor = 'col-resize';
+        document.body.style.userSelect = 'none';
+        e.preventDefault();
+      });
+
+      document.addEventListener('mousemove', (e) => {
+        if (!dragging) return;
+        const newW = Math.min(MAX_W, Math.max(MIN_W, startW + e.clientX - startX));
+        panel.style.width = newW + 'px';
+      });
+
+      document.addEventListener('mouseup', () => {
+        if (!dragging) return;
+        dragging = false;
+        handle.classList.remove('dragging');
+        document.body.style.cursor = '';
+        document.body.style.userSelect = '';
+      });
+    }
+  })();
 </script>
 </body>
 </html>

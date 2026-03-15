@@ -25,29 +25,6 @@
     --tag-purple: #4a1a7a;
   }
 
-  /* ══ PAGE THEMES ══ */
-  body, body * { transition: background-color .3s, border-color .3s, color .3s, box-shadow .3s; }
-  body.theme-chat {
-    --accent: #e94560; --accent2: #0f7de4; --accent3: #00d4aa;
-    --bg-dark: #1a1a2e; --bg-mid: #16213e; --bg-card: #0f3460; --bg-item: #1e2a45; --border: #2a3a5e;
-  }
-  body.theme-learn {
-    --accent: #10b981; --accent2: #34d399; --accent3: #059669;
-    --bg-dark: #0a1f15; --bg-mid: #0e2b1c; --bg-card: #0d3824; --bg-item: #163020; --border: #1c4830;
-  }
-  body.theme-tasks {
-    --accent: #f59e0b; --accent2: #f97316; --accent3: #fbbf24;
-    --bg-dark: #1c1408; --bg-mid: #24190b; --bg-card: #38280a; --bg-item: #2c1e0c; --border: #48320e;
-  }
-  body.theme-stats {
-    --accent: #8b5cf6; --accent2: #a78bfa; --accent3: #c4b5fd;
-    --bg-dark: #12101e; --bg-mid: #18142e; --bg-card: #241a48; --bg-item: #1e1638; --border: #342858;
-  }
-  body.theme-settings {
-    --accent: #0ea5e9; --accent2: #38bdf8; --accent3: #7dd3fc;
-    --bg-dark: #0c1622; --bg-mid: #10202e; --bg-card: #122a3e; --bg-item: #162434; --border: #1e3a52;
-  }
-
   body {
     font-family: "Microsoft YaHei", "微软雅黑", sans-serif;
     background: var(--bg-dark);
@@ -55,8 +32,132 @@
     height: 100vh;
     display: flex;
     overflow: hidden;
-    font-size: 13px;
+    font-size: var(--font-size, 13px);
   }
+
+  /* ══ 页面切换 ══ */
+  .page { display: none; flex: 1; overflow: hidden; flex-direction: column; }
+  .page.active { display: flex; }
+
+  /* ── 历史记录页 ── */
+  .history-wrap {
+    flex: 1; overflow-y: auto; padding: 20px 24px;
+    display: flex; flex-direction: column; gap: 0;
+  }
+  .history-wrap::-webkit-scrollbar { width: 4px; }
+  .history-wrap::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+  .history-top {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  .history-top-title { font-size: 15px; font-weight: 700; color: #fff; }
+  .history-count { font-size: 11px; color: var(--text-muted); }
+  .history-empty {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    flex: 1; color: var(--text-muted); font-size: 13px; gap: 10px; padding-top: 60px;
+  }
+  .history-empty-icon { font-size: 40px; opacity: 0.4; }
+  .history-list { display: flex; flex-direction: column; gap: 8px; }
+  .history-item {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 14px 16px; background: var(--bg-mid);
+    border: 1px solid var(--border); border-radius: 10px;
+    cursor: pointer; transition: border-color 0.2s, background 0.2s;
+  }
+  .history-item:hover { border-color: var(--accent2); background: var(--bg-item); }
+  .history-icon { font-size: 20px; flex-shrink: 0; margin-top: 2px; }
+  .history-info { flex: 1; overflow: hidden; }
+  .history-title {
+    font-size: 13px; font-weight: 600; color: #fff;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .history-meta {
+    font-size: 11px; color: var(--text-muted); margin-top: 3px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .history-module-tag {
+    padding: 1px 6px; border-radius: 4px;
+    background: rgba(15,125,228,0.2); color: var(--accent2);
+    font-size: 10px; font-weight: 600;
+  }
+  .history-del {
+    width: 26px; height: 26px; border-radius: 6px; border: none;
+    background: transparent; color: var(--text-muted); cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; flex-shrink: 0; transition: all 0.15s;
+  }
+  .history-del:hover { background: rgba(233,69,96,0.15); color: #f87192; }
+
+  /* ── 设置页 ── */
+  .settings-wrap {
+    flex: 1; overflow-y: auto; padding: 20px 24px;
+    display: flex; flex-direction: column; gap: 16px;
+  }
+  .settings-wrap::-webkit-scrollbar { width: 4px; }
+  .settings-wrap::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+  .settings-section {
+    background: var(--bg-mid); border: 1px solid var(--border);
+    border-radius: 12px; overflow: hidden;
+  }
+  .settings-section-title {
+    font-size: 11px; font-weight: 700; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 0.8px;
+    padding: 12px 16px 8px; border-bottom: 1px solid var(--border);
+  }
+  .settings-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 16px; border-bottom: 1px solid var(--border);
+  }
+  .settings-row:last-child { border-bottom: none; }
+  .settings-label { display: flex; flex-direction: column; gap: 2px; }
+  .settings-label span:first-child { font-size: 13px; color: var(--text); font-weight: 500; }
+  .settings-hint { font-size: 11px; color: var(--text-muted); }
+  .settings-control { display: flex; align-items: center; gap: 10px; }
+  .font-size-val {
+    font-size: 12px; color: var(--accent2); font-weight: 700;
+    min-width: 32px; text-align: right;
+  }
+  input[type=range].font-slider {
+    -webkit-appearance: none; appearance: none; width: 120px; height: 4px;
+    background: var(--border); border-radius: 2px; outline: none; cursor: pointer;
+  }
+  input[type=range].font-slider::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none; width: 14px; height: 14px;
+    border-radius: 50%; background: var(--accent2); cursor: pointer;
+  }
+  .settings-input {
+    background: var(--bg-item); border: 1px solid var(--border);
+    border-radius: 7px; padding: 6px 10px; color: var(--text);
+    font-size: 12px; font-family: inherit; outline: none; width: 240px;
+    transition: border-color 0.2s;
+  }
+  .settings-input:focus { border-color: var(--accent2); }
+  .settings-select {
+    background: var(--bg-item); border: 1px solid var(--border);
+    border-radius: 7px; padding: 6px 10px; color: var(--text);
+    font-size: 12px; font-family: inherit; outline: none; cursor: pointer;
+    transition: border-color 0.2s;
+  }
+  .settings-btn {
+    padding: 6px 16px; border-radius: 7px; border: none; cursor: pointer;
+    font-size: 12px; font-weight: 600; font-family: inherit;
+    background: var(--accent2); color: #fff; transition: opacity 0.15s;
+  }
+  .settings-btn:hover { opacity: 0.85; }
+  .settings-btn.secondary {
+    background: var(--bg-item); color: var(--text);
+    border: 1px solid var(--border);
+  }
+
+  /* ── 新建对话按钮 ── */
+  .new-chat-btn {
+    margin: 8px; padding: 9px 12px; border-radius: 8px;
+    background: var(--accent); color: #fff; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    gap: 6px; font-size: 12px; font-weight: 600; user-select: none;
+    transition: opacity 0.15s;
+  }
+  .new-chat-btn:hover { opacity: 0.85; }
 
   /* ── 侧边栏 ── */
   .sidebar {
@@ -540,22 +641,20 @@
   </div>
 
   <nav class="nav">
-    <div class="nav-item active" data-theme="chat" onclick="setNav(this)">
+    <div class="nav-item active" data-page="chat" onclick="setNav(this)">
       <span class="nav-icon">🤖</span> 智能对话
     </div>
-    <div class="nav-item" data-theme="learn" onclick="setNav(this)">
-      <span class="nav-icon">📚</span> 学习模块
+    <div class="nav-item" data-page="history" onclick="setNav(this)">
+      <span class="nav-icon">📋</span> 历史记录
     </div>
-    <div class="nav-item" data-theme="tasks" onclick="setNav(this)">
-      <span class="nav-icon">📋</span> 任务记录
-    </div>
-    <div class="nav-item" data-theme="stats" onclick="setNav(this)">
-      <span class="nav-icon">📊</span> 使用统计
-    </div>
-    <div class="nav-item" data-theme="settings" onclick="setNav(this)">
+    <div class="nav-item" data-page="settings" onclick="setNav(this)">
       <span class="nav-icon">⚙️</span> 设置
     </div>
   </nav>
+
+  <div class="new-chat-btn" id="new-chat-btn" onclick="newConversation()">
+    <span>＋</span> 新建对话
+  </div>
 
   <div class="sidebar-footer">
     <div><span class="status-dot"></span>Agent 运行中</div>
@@ -582,6 +681,9 @@
       <div class="tab" onclick="setTab(this)">创新</div>
     </div>
   </div>
+
+  <!-- 页面：智能对话 -->
+  <div id="page-chat" class="page active">
 
   <!-- 内容 -->
   <div class="content">
@@ -882,6 +984,97 @@
 
   </div><!-- /content -->
 
+  </div><!-- /page-chat -->
+
+  <!-- 页面：历史记录 -->
+  <div id="page-history" class="page">
+    <div class="history-wrap">
+      <div class="history-top">
+        <span class="history-top-title">📋 历史记录</span>
+        <span class="history-count" id="history-count">0 条记录</span>
+      </div>
+      <div class="history-list" id="history-list"></div>
+      <div class="history-empty" id="history-empty">
+        <div class="history-empty-icon">💬</div>
+        <div>暂无对话记录</div>
+        <div style="font-size:11px;margin-top:4px">去「智能对话」发起第一条对话吧</div>
+      </div>
+    </div>
+  </div><!-- /page-history -->
+
+  <!-- 页面：设置 -->
+  <div id="page-settings" class="page">
+    <div class="settings-wrap">
+
+      <!-- 外观设置 -->
+      <div class="settings-section">
+        <div class="settings-section-title">外观设置</div>
+        <div class="settings-row">
+          <div class="settings-label">
+            <span>字体大小</span>
+            <span class="settings-hint">调整界面全局文字大小</span>
+          </div>
+          <div class="settings-control">
+            <span class="font-size-val" id="font-size-val">13px</span>
+            <input type="range" class="font-slider" id="font-size-slider"
+              min="11" max="18" step="1" value="13"
+              oninput="setFontSize(this.value)">
+          </div>
+        </div>
+      </div>
+
+      <!-- API 配置 -->
+      <div class="settings-section">
+        <div class="settings-section-title">API 配置</div>
+        <div class="settings-row">
+          <div class="settings-label">
+            <span>应用类型</span>
+            <span class="settings-hint">chatbot / workflow / completion</span>
+          </div>
+          <select class="settings-select" id="cfg-apptype" onchange="saveConfig()">
+            <option value="chatbot">Chatbot</option>
+            <option value="workflow">Workflow</option>
+            <option value="completion">Completion</option>
+          </select>
+        </div>
+        <div class="settings-row">
+          <div class="settings-label">
+            <span>API 地址</span>
+            <span class="settings-hint">Base URL，如 https://api.dify.ai/v1</span>
+          </div>
+          <input class="settings-input" id="cfg-baseurl" type="text" placeholder="https://api.dify.ai/v1" oninput="saveConfig()">
+        </div>
+        <div class="settings-row">
+          <div class="settings-label">
+            <span>默认 API Key</span>
+            <span class="settings-hint">用于未单独配置模块的兜底 Key</span>
+          </div>
+          <input class="settings-input" id="cfg-apikey" type="password" placeholder="app-xxxxxxxxxxxxxxxx" oninput="saveConfig()">
+        </div>
+        <div class="settings-row">
+          <div class="settings-label">
+            <span>User ID</span>
+            <span class="settings-hint">请求时传入的用户标识</span>
+          </div>
+          <input class="settings-input" id="cfg-userid" type="text" placeholder="user-001" oninput="saveConfig()">
+        </div>
+      </div>
+
+      <!-- 对话管理 -->
+      <div class="settings-section">
+        <div class="settings-section-title">对话管理</div>
+        <div class="settings-row">
+          <div class="settings-label">
+            <span>清空所有历史记录</span>
+            <span class="settings-hint">删除本地保存的全部对话记录，不可恢复</span>
+          </div>
+          <button class="settings-btn secondary" onclick="clearAllHistory()">清空历史</button>
+        </div>
+      </div>
+
+    </div>
+  </div><!-- /page-settings -->
+
   <!-- 底部状态栏 -->
   <div class="statusbar">
     <div class="stat-item">
@@ -960,13 +1153,17 @@
     sendMessage();
   }
 
-  // ── 导航选中 ──
+  // ── 导航切换 ──
   function setNav(el) {
     document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
     el.classList.add('active');
-    // 切换页面主题
-    document.body.classList.remove('theme-chat','theme-learn','theme-tasks','theme-stats','theme-settings');
-    document.body.classList.add('theme-' + el.dataset.theme);
+    const pg = el.dataset.page;
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById('page-' + pg).classList.add('active');
+    // 新建对话按钮只在智能对话页显示
+    document.getElementById('new-chat-btn').style.display = pg === 'chat' ? '' : 'none';
+    if (pg === 'history') renderHistory();
+    if (pg === 'settings') loadConfigUI();
   }
 
   function setTab(el) {
@@ -1135,6 +1332,8 @@
     // 清空附件
     pendingFiles = [];
     renderAttachPreview();
+    // 若尚无活动对话 ID，创建一个
+    if (!activeConvId) activeConvId = 'conv_' + Date.now();
 
     input.value = '';
     input.style.height = '22px';
@@ -1309,6 +1508,124 @@
     }
   }
 
+  // ══ 对话历史 ══
+  let conversationHistory = [];   // [{id, title, module, date, messages:[]}]
+  let activeConvId = null;
+
+  function newConversation() {
+    // 保存当前对话（如果有消息）
+    saveCurrentConversation();
+    // 重置聊天区
+    activeConvId = 'conv_' + Date.now();
+    clearChat(true);
+    pendingFiles = [];
+    renderAttachPreview();
+  }
+
+  function saveCurrentConversation() {
+    const msgs = document.getElementById('chat-messages');
+    const bubbles = msgs.querySelectorAll('.msg-bubble');
+    if (bubbles.length === 0) return;          // 空对话不保存
+    // 第一条用户消息作为标题
+    const userBubbles = msgs.querySelectorAll('.msg.user .msg-bubble');
+    const firstUserText = userBubbles.length > 0
+      ? userBubbles[0].textContent.replace(/\s+/g, ' ').trim().slice(0, 30)
+      : '新对话';
+    const title = firstUserText || '新对话';
+    const id = activeConvId || ('conv_' + Date.now());
+    // 只存 HTML 快照
+    const snapshot = msgs.innerHTML;
+    const existing = conversationHistory.findIndex(c => c.id === id);
+    const record = {
+      id, title,
+      module: currentSub ? currentSub.name : '智能对话',
+      date: new Date().toLocaleString('zh-CN', { month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' }),
+      snapshot
+    };
+    if (existing >= 0) {
+      conversationHistory[existing] = record;
+    } else {
+      conversationHistory.unshift(record);
+    }
+  }
+
+  function renderHistory() {
+    const list  = document.getElementById('history-list');
+    const empty = document.getElementById('history-empty');
+    const count = document.getElementById('history-count');
+    count.textContent = conversationHistory.length + ' 条记录';
+    if (conversationHistory.length === 0) {
+      list.innerHTML = '';
+      empty.style.display = 'flex';
+      return;
+    }
+    empty.style.display = 'none';
+    list.innerHTML = conversationHistory.map(c => `
+      <div class="history-item" onclick="openConversation('${c.id}')">
+        <div class="history-icon">💬</div>
+        <div class="history-info">
+          <div class="history-title">${escHtml(c.title)}</div>
+          <div class="history-meta">
+            <span class="history-module-tag">${escHtml(c.module)}</span>
+            <span>${c.date}</span>
+          </div>
+        </div>
+        <button class="history-del" title="删除" onclick="deleteConversation(event,'${c.id}')">🗑</button>
+      </div>`).join('');
+  }
+
+  function openConversation(id) {
+    const conv = conversationHistory.find(c => c.id === id);
+    if (!conv) return;
+    saveCurrentConversation();
+    activeConvId = id;
+    document.getElementById('chat-messages').innerHTML = conv.snapshot;
+    document.getElementById('chat-messages').scrollTop = 9999;
+    // 切换到智能对话页
+    setNav(document.querySelector('.nav-item[data-page="chat"]'));
+  }
+
+  function deleteConversation(e, id) {
+    e.stopPropagation();
+    conversationHistory = conversationHistory.filter(c => c.id !== id);
+    if (activeConvId === id) activeConvId = null;
+    renderHistory();
+  }
+
+  function clearAllHistory() {
+    if (!confirm('确定要清空所有历史记录吗？此操作不可恢复。')) return;
+    conversationHistory = [];
+    activeConvId = null;
+    renderHistory();
+  }
+
+  function escHtml(str) {
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  // ══ 字体大小 ══
+  function setFontSize(val) {
+    val = parseInt(val);
+    document.documentElement.style.setProperty('--font-size', val + 'px');
+    document.getElementById('font-size-val').textContent = val + 'px';
+    document.getElementById('font-size-slider').value = val;
+  }
+
+  // ══ 设置页 UI ══
+  function loadConfigUI() {
+    document.getElementById('cfg-apptype').value = DIFY_CONFIG.appType || 'chatbot';
+    document.getElementById('cfg-baseurl').value = DIFY_CONFIG.baseURL || '';
+    document.getElementById('cfg-apikey').value  = DIFY_CONFIG.apiKeys.default || '';
+    document.getElementById('cfg-userid').value  = DIFY_CONFIG.userId || '';
+  }
+
+  function saveConfig() {
+    DIFY_CONFIG.appType            = document.getElementById('cfg-apptype').value;
+    DIFY_CONFIG.baseURL            = document.getElementById('cfg-baseurl').value.trim();
+    DIFY_CONFIG.apiKeys.default    = document.getElementById('cfg-apikey').value.trim();
+    DIFY_CONFIG.userId             = document.getElementById('cfg-userid').value.trim();
+  }
+
   function handleKey(e) {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -1320,6 +1637,11 @@
     el.style.height = '22px';
     el.style.height = Math.min(el.scrollHeight, 100) + 'px';
   }
+
+  // ── 初始化 ──
+  activeConvId = 'conv_' + Date.now();   // 默认首个对话 ID
+  loadConfigUI();                         // 载入设置页初始值
+
   // ── 侧边栏拖拽调整宽度 ──
   (function () {
     const handle = document.getElementById('sidebar-resize');

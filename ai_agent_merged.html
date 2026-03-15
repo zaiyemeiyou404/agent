@@ -1243,7 +1243,7 @@
       '项目创意生成':   'app-xxxxxxxxxxxxxxxxxxxxxxxx',
       '跨专业协作组队': 'app-xxxxxxxxxxxxxxxxxxxxxxxx',
       '竞赛题目分析':   'app-xxxxxxxxxxxxxxxxxxxxxxxx',
-      default:          'app-xxxxxxxxxxxxxxxxxxxxxxxx',   // ← 兜底 Key
+      default:          'app-43b00a9f-2aea-419e-9352-d3cab4225dc3',   // ← 兜底 Key
     },
 
     // 用户标识（可改成登录用户的 ID）
@@ -1293,6 +1293,49 @@
     renderAttachPreview();
   }
 
+  // ⭐ 上传文件到 Dify 并返回 file_id
+  async function uploadFileToDify(file, apiKey) {
+    console.log('🔄 开始上传文件到 Dify:', file.name);
+
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('user', DIFY_CONFIG.userId);
+
+    try {
+      const response = await fetch(`${DIFY_CONFIG.baseURL}/files/upload`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`
+        },
+        body: formData
+      });
+
+      console.log('📡 上传响应状态:', response.status);
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.message || `HTTP ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('✅ 文件上传成功:', data);
+      return data.id;  // 返回文件 ID
+    } catch (err) {
+      console.error('❌ 上传失败详情:', err);
+      throw new Error(`文件上传失败: ${err.message}`);
+    }
+  }
+
+  // ⭐ 文件转 base64（备用方案）
+  function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
   // ── 核心发送函数（SSE 流式输出）──
   async function sendMessage() {
     const input = document.getElementById('chat-input');
@@ -1329,6 +1372,9 @@
     container.appendChild(userDiv);
     container.scrollTop = container.scrollHeight;
 
+    // 保存待发送的文件（在清空前）
+    const filesToUpload = [...pendingFiles];
+
     // 清空附件
     pendingFiles = [];
     renderAttachPreview();
@@ -1347,6 +1393,49 @@
     const subName = currentSub.name;
     const apiKey  = getDifyKey(subName);
     const convId  = conversationIds[subName] || '';
+
+    // ⭐ 上传文件到 Dify 并获取 file_id（或使用 base64 备用方案）
+    const uploadedFiles = [];
+    if (filesToUpload.length > 0) {
+      console.log('📤 准备处理文件:', filesToUpload.length, '个');
+      for (const item of filesToUpload) {
+        try {
+          // 方案1：尝试上传文件
+          console.log('⬆️ 正在上传:', item.file.name);
+          const fileId = await uploadFileToDify(item.file, apiKey);
+          console.log('✅ 上传成功，文件ID:', fileId);
+          uploadedFiles.push({
+            type: item.type === 'image' ? 'image' : 'file',
+            transfer_method: 'local_file',  // ⭐ 修复：改成 local_file
+            upload_file_id: fileId,
+            url: ''  // ⭐ 添加 url 字段
+          });
+        } catch (uploadErr) {
+          // 方案2：上传失败，使用 base64 备用方案
+          console.warn('⚠️ 文件上传失败，尝试 base64 方案:', uploadErr.message);
+          try {
+            if (item.type === 'image') {
+              const base64 = await fileToBase64(item.file);
+              console.log('✅ 已转换为 base64');
+              uploadedFiles.push({
+                type: 'image',
+                transfer_method: 'local_file',
+                upload_file_id: base64,
+                url: ''  // ⭐ 添加 url 字段
+              });
+            } else {
+              throw new Error('非图片文件不支持 base64 方案');
+            }
+          } catch (base64Err) {
+            console.error('❌ base64 方案也失败:', base64Err);
+            removeTyping();
+            addAgentMsg(`⚠️ 文件处理失败：${uploadErr.message}<br><small>提示：如果使用了代理/梯子，可能影响文件上传。建议直接在 Dify 网页端使用。</small>`);
+            return;
+          }
+        }
+      }
+      console.log('📋 文件处理完成，uploadedFiles:', uploadedFiles);
+    }
 
     // 根据应用类型选择正确的 API 端点和参数
     let endpoint, requestBody;
@@ -1371,14 +1460,31 @@
     } else {
       // 聊天助手/Agent 类型（默认）
       endpoint = `${DIFY_CONFIG.baseURL}/chat-messages`;
+
+      // ⭐ 如果有上传文件，强制开启新会话（避免使用旧提示词）
+      let useConvId = convId;
+      if (uploadedFiles.length > 0) {
+        console.log('📸 检测到图片上传，开启新会话以使用最新提示词');
+        useConvId = '';  // 清空会话ID，强制新会话
+      }
+
       requestBody = {
         inputs: {},
-        query: text,
+        query: text || '请分析这张图片',
         response_mode: 'streaming',
-        conversation_id: convId,
+        conversation_id: useConvId,
         user: DIFY_CONFIG.userId,
       };
+
+      // ⭐ 添加已上传的文件
+      if (uploadedFiles.length > 0) {
+        requestBody.files = uploadedFiles;
+        console.log('📎 已将文件添加到请求:', requestBody.files);
+      }
     }
+
+    console.log('🚀 发送请求到:', endpoint);
+    console.log('📦 完整请求体:', JSON.stringify(requestBody, null, 2));
 
     try {
       const res = await fetch(endpoint, {
@@ -1435,6 +1541,10 @@
           try {
             const data = JSON.parse(jsonStr);
 
+            // 🔍 完整调试输出
+            console.log('📥 收到事件:', data.event);
+            console.log('📦 完整数据:', data);
+
             // 保存 conversation_id（首次响应会返回）
             if (data.conversation_id) {
               conversationIds[subName] = data.conversation_id;
@@ -1444,17 +1554,23 @@
             let textContent = null;
 
             if (data.event === 'message' && data.answer) {
-              // 聊天助手/Completion 类型
+              // 标准聊天助手
               textContent = data.answer;
-            } else if (data.event === 'text_chunk') {
-              // 工作流：流式文本块
-              textContent = data.data?.text || data.text;
+            } else if (data.event === 'agent_message') {
+              // Agent 类型消息
+              textContent = data.answer || data.content || data.text;
+            } else if (data.event === 'agent_thought') {
+              // Agent 思考过程
+              textContent = data.thought || data.content;
+            } else if (data.event === 'text_chunk' || data.event === 'message_replace') {
+              // 文本块或替换事件
+              textContent = data.answer || data.data?.text || data.text;
             } else if (data.event === 'node_finished') {
-              // 工作流：节点完成（尝试多个可能的字段）
+              // 工作流节点完成
               const outputs = data.data?.outputs || {};
               textContent = outputs.text || outputs.output || outputs.result || outputs.answer;
             } else if (data.event === 'workflow_finished') {
-              // 工作流：整体完成
+              // 工作流完成
               const outputs = data.data?.outputs || {};
               textContent = outputs.text || outputs.output || outputs.result || outputs.answer;
             }

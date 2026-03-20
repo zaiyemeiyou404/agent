@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AI Agent 智能助手</title>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -496,6 +497,112 @@
   }
 
   .msg-time { font-size: 10px; color: var(--text-muted); margin-top: 4px; }
+
+  /* Markdown 样式 */
+  .msg-bubble h1, .msg-bubble h2, .msg-bubble h3, .msg-bubble h4, .msg-bubble h5, .msg-bubble h6 {
+    margin: 12px 0 8px 0;
+    color: var(--accent2);
+    font-weight: bold;
+  }
+
+  .msg-bubble h1 { font-size: 16px; }
+  .msg-bubble h2 { font-size: 15px; }
+  .msg-bubble h3 { font-size: 14px; }
+  .msg-bubble h4 { font-size: 13px; }
+
+  .msg-bubble table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 10px 0;
+    font-size: 12px;
+  }
+
+  .msg-bubble table th,
+  .msg-bubble table td {
+    border: 1px solid var(--border);
+    padding: 8px;
+    text-align: left;
+  }
+
+  .msg-bubble table th {
+    background: rgba(15, 125, 228, 0.2);
+    color: var(--accent2);
+    font-weight: bold;
+  }
+
+  .msg-bubble table tr:nth-child(even) {
+    background: rgba(15, 125, 228, 0.05);
+  }
+
+  .msg-bubble ul, .msg-bubble ol {
+    margin: 8px 0 8px 20px;
+  }
+
+  .msg-bubble li {
+    margin: 4px 0;
+  }
+
+  .msg-bubble strong {
+    color: var(--accent);
+    font-weight: bold;
+  }
+
+  .msg-bubble em {
+    color: var(--accent3);
+    font-style: italic;
+  }
+
+  .msg-bubble code {
+    background: rgba(15, 125, 228, 0.15);
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-family: 'Courier New', monospace;
+    color: var(--accent3);
+    font-size: 11px;
+  }
+
+  .msg-bubble pre {
+    background: var(--bg-card);
+    padding: 10px;
+    border-radius: 6px;
+    overflow-x: auto;
+    margin: 8px 0;
+    border: 1px solid var(--border);
+  }
+
+  .msg-bubble pre code {
+    background: none;
+    padding: 0;
+    color: var(--accent3);
+  }
+
+  .msg-bubble blockquote {
+    border-left: 3px solid var(--accent2);
+    padding-left: 10px;
+    margin: 8px 0;
+    color: var(--text-muted);
+    font-style: italic;
+  }
+
+  .msg-bubble hr {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 10px 0;
+  }
+
+  .msg-bubble a {
+    color: var(--accent2);
+    text-decoration: none;
+    border-bottom: 1px solid var(--accent2);
+  }
+
+  .msg-bubble a:hover {
+    color: var(--accent3);
+  }
+
+  .msg-bubble p {
+    margin: 6px 0;
+  }
 
   .quick-chips {
     padding: 8px 18px;
@@ -1620,7 +1727,12 @@
               } else {
                 fullText = textContent;   // 全量替换（用于 workflow 完成事件）
               }
-              bubble.textContent = fullText;
+              // 使用 marked 解析 Markdown
+              try {
+                bubble.innerHTML = marked.parse(fullText);
+              } catch (e) {
+                bubble.textContent = fullText;
+              }
               container.scrollTop = container.scrollHeight;
             }
 
@@ -1643,6 +1755,9 @@
       document.getElementById('stat-down').textContent = msgCount;
       document.getElementById('stat-tokens').textContent = tokenCount;
 
+      // 保存对话到历史记录
+      saveCurrentConversation();
+
     } catch (err) {
       removeTyping();
       addAgentMsg(`⚠️ 请求失败：${err.message}<br>
@@ -1662,6 +1777,28 @@
   // ══ 对话历史 ══
   let conversationHistory = [];   // [{id, title, module, date, messages:[]}]
   let activeConvId = null;
+
+  // 初始化：从 localStorage 加载历史记录
+  function initHistory() {
+    try {
+      const saved = localStorage.getItem('dify_conversation_history');
+      if (saved) {
+        conversationHistory = JSON.parse(saved);
+        renderHistory();
+      }
+    } catch (e) {
+      console.warn('加载历史记录失败:', e);
+    }
+  }
+
+  // 保存历史记录到 localStorage
+  function saveHistoryToStorage() {
+    try {
+      localStorage.setItem('dify_conversation_history', JSON.stringify(conversationHistory));
+    } catch (e) {
+      console.warn('保存历史记录失败:', e);
+    }
+  }
 
   function newConversation() {
     // 保存当前对话（如果有消息）
@@ -1698,6 +1835,8 @@
     } else {
       conversationHistory.unshift(record);
     }
+    // 保存到 localStorage
+    saveHistoryToStorage();
   }
 
   function renderHistory() {
@@ -1740,6 +1879,8 @@
     e.stopPropagation();
     conversationHistory = conversationHistory.filter(c => c.id !== id);
     if (activeConvId === id) activeConvId = null;
+    // 保存到 localStorage
+    saveHistoryToStorage();
     renderHistory();
   }
 
@@ -1747,6 +1888,8 @@
     if (!confirm('确定要清空所有历史记录吗？此操作不可恢复。')) return;
     conversationHistory = [];
     activeConvId = null;
+    // 清空 localStorage
+    saveHistoryToStorage();
     renderHistory();
   }
 
@@ -1923,6 +2066,12 @@
       document.body.style.userSelect = '';
     });
   })();
+
+  // 页面加载时初始化历史记录
+  window.addEventListener('load', () => {
+    initHistory();
+    loadConfigUI();
+  });
 
 </script>
 </body>
